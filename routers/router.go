@@ -2,9 +2,10 @@ package routers
 
 import (
 	"coindis/controllers"
+
 	"github.com/astaxie/beego"
 )
 
 func init() {
-    beego.Router("/", &controllers.MainController{})
+	beego.Router("/", &controllers.IndexController{})
 }
