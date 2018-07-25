@@ -49,11 +49,13 @@ func (c *IndexController) Post() {
 		r := Response{1, "Get Amount error"}
 		c.Data["json"] = r
 		c.ServeJSON()
+		return
 	}
 	if amount > limit {
 		r := Response{1, "Amount is too big"}
 		c.Data["json"] = r
 		c.ServeJSON()
+		return
 	}
 
 	address, err := btcutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
@@ -61,6 +63,7 @@ func (c *IndexController) Post() {
 		r := Response{1, "Decode Address error"}
 		c.Data["json"] = r
 		c.ServeJSON()
+		return
 	}
 
 	ip := c.Ctx.Input.IP()
@@ -69,6 +72,7 @@ func (c *IndexController) Post() {
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
 		c.ServeJSON()
+		return
 	}
 
 	if hisrecoder != nil {
@@ -77,6 +81,7 @@ func (c *IndexController) Post() {
 			r := Response{1, "Request Interval less than one day"}
 			c.Data["json"] = r
 			c.ServeJSON()
+			return
 		}
 	}
 
@@ -86,19 +91,20 @@ func (c *IndexController) Post() {
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
 		c.ServeJSON()
+		return
 	}
 
 	o := orm.NewOrm()
 	if hisrecoder.Address == addr && hisrecoder.IP == ip {
 		his := models.History{
-			Amount: int64(amount * 1e8),
+			Amount: amount,
 		}
 		o.Update(his, "amount", "updated")
 	} else {
 		his := models.History{
 			Address: address.String(),
 			IP:      ip,
-			Amount:  34,
+			Amount:  amount,
 		}
 		o.Insert(&his)
 	}

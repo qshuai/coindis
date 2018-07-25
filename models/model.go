@@ -12,7 +12,7 @@ type History struct {
 	Id      int
 	Address string
 	IP      string
-	Amount  int64
+	Amount  float64
 	Updated time.Time `orm:"type(datetime);auto_now"`
 	Created time.Time `orm:"auto_now_add;type(datetime)"`
 }
