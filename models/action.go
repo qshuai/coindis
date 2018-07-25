@@ -1,7 +1,6 @@
 package models
 
 import (
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
 )
 
@@ -11,16 +10,16 @@ func GetHistoryLimit100() (his []*History) {
 	return
 }
 
-func ReturnTimeIfExist(addr, ip string) (*History, bool) {
+func ReturnTimeIfExist(addr, ip string) *History {
 	o := orm.NewOrm()
 	cond := orm.NewCondition()
 	cond1 := cond.Or("address", addr).Or("ip", ip)
 
 	his := &History{}
-	err := o.QueryTable(beego.AppConfig.String("mysql:database")).SetCond(cond1).OrderBy("-updated").Limit(1).One(his)
+	err := o.QueryTable("history").SetCond(cond1).OrderBy("-updated").Limit(1).One(his)
 	if err != nil {
-		return nil, false
+		return nil
 	}
 
-	return his, true
+	return his
 }

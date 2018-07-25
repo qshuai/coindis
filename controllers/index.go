@@ -67,13 +67,7 @@ func (c *IndexController) Post() {
 	}
 
 	ip := c.Ctx.Input.IP()
-	hisrecoder, ok := models.ReturnTimeIfExist(addr, ip)
-	if !ok {
-		r := Response{1, "Create Transaction error"}
-		c.Data["json"] = r
-		c.ServeJSON()
-		return
-	}
+	hisrecoder := models.ReturnTimeIfExist(addr, ip)
 
 	if hisrecoder != nil {
 		updated := hisrecoder.Updated
@@ -95,7 +89,7 @@ func (c *IndexController) Post() {
 	}
 
 	o := orm.NewOrm()
-	if hisrecoder.Address == addr && hisrecoder.IP == ip {
+	if hisrecoder != nil && hisrecoder.Address == addr && hisrecoder.IP == ip {
 		his := models.History{
 			Amount: amount,
 		}
