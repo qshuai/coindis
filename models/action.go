@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
 )
 
@@ -16,7 +17,7 @@ func ReturnTimeIfExist(addr, ip string) (*History, bool) {
 	cond1 := cond.Or("address", addr).Or("ip", ip)
 
 	his := &History{}
-	err := o.QueryTable("coindis").SetCond(cond1).OrderBy("-updated").Limit(1).One(his)
+	err := o.QueryTable(beego.AppConfig.String("mysql:database")).SetCond(cond1).OrderBy("-updated").Limit(1).One(his)
 	if err != nil {
 		return nil, false
 	}
