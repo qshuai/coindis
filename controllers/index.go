@@ -95,8 +95,8 @@ func (c *IndexController) Post() {
 	}
 
 	if hisrecoder != nil {
-		updated := hisrecoder.Updated
-		if updated.Sub(time.Now()) < time.Duration(interval) {
+		now := time.Now()
+		if now.Sub(hisrecoder.Updated) < time.Duration(interval) {
 			r := Response{1, "Request Interval less than one day"}
 			c.Data["json"] = r
 			c.ServeJSON()
