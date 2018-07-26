@@ -50,6 +50,7 @@ func (c *IndexController) Get() {
 }
 
 func (c *IndexController) Post() {
+	// get bitcoin address and ip from request body
 	addr := c.GetString("address")
 	if ic.isExit(addr) {
 		r := Response{1, "Do not request repeat!"}
@@ -57,7 +58,6 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
-
 	ip := c.Ctx.Input.IP()
 	if ic.isExit(ip) {
 		r := Response{1, "Do not request repeat!"}
@@ -66,12 +66,7 @@ func (c *IndexController) Post() {
 		return
 	}
 
-	// insert to cache
-	ic.insertNew(addr, ip)
-
-	// view database
-	hisrecoder := models.ReturnTimeIfExist(addr, ip)
-
+	// get and parse amount
 	amount, err := c.GetFloat("amount")
 	if err != nil {
 		r := Response{1, "Get Amount error"}
@@ -85,6 +80,9 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
+
+	// view database, refused for less than one day's request
+	hisrecoder := models.ReturnTimeIfExist(addr, ip)
 
 	address, err := btcutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
 	if err != nil {
@@ -103,6 +101,9 @@ func (c *IndexController) Post() {
 			return
 		}
 	}
+
+	// insert to cache， because it will be successful mostly!
+	ic.insertNew(addr, ip)
 
 	client = Client()
 	txid, err := client.SendToAddress(address, btcutil.Amount(amount*1e8))
