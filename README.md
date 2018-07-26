@@ -1,10 +1,10 @@
 ### What Is This?
 
-This reposity aims to distribute BCH for free by setuping a web server connected to a bitcoin cash client!!!
+This repository aims to distribute BCH for free by setuping a web server connected to a bitcoin cash client!!!
 
 ### SetUp:
 
-1. Get this reposity:
+1. Get this repository:
 
    ```
    go get github.com/qshuai/coindis
@@ -13,7 +13,9 @@ This reposity aims to distribute BCH for free by setuping a web server connected
 2. Configure your configuration file 
 
    ```
-   vim $GOPATH/src/github.com/qshuai/coindis/conf/app.conf
+   cd $GOPATH/src/github.com/qshuai/coindis
+   cp conf/app.conf.sample conf/app.conf
+   vim conf/app.conf
    ```
 
 3. Run APP
