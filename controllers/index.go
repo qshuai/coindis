@@ -32,11 +32,9 @@ var ic = newInfoCache()
 func (c *IndexController) Get() {
 	dataList := models.GetHistoryLimit100()
 
-	var amount btcutil.Amount
-	if balance <= 0 {
+	if balance <= 1 {
 		client = Client()
-		var err error
-		amount, err = client.GetBalance("")
+		amount, err := client.GetBalance("")
 		if err != nil {
 			amount = btcutil.Amount(balance)
 		}
@@ -46,7 +44,7 @@ func (c *IndexController) Get() {
 	}
 
 	c.Data["addr"] = conf.String("addr")
-	c.Data["balance"] = amount.String()
+	c.Data["balance"] = btcutil.Amount(balance).String()
 	c.Data["list"] = dataList
 	c.TplName = "index.html"
 }
