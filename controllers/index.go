@@ -27,6 +27,7 @@ var client *rpcclient.Client
 var balance int64
 var limit float64
 var interval int64
+var ic = newInfoCache()
 
 func (c *IndexController) Get() {
 	datalist := models.GetHistoryLimit100()
@@ -44,6 +45,27 @@ func (c *IndexController) Get() {
 
 func (c *IndexController) Post() {
 	addr := c.GetString("address")
+	if ic.isExit(addr) {
+		r := Response{1, "Do not request repeat!"}
+		c.Data["json"] = r
+		c.ServeJSON()
+		return
+	}
+
+	ip := c.Ctx.Input.IP()
+	if ic.isExit(ip) {
+		r := Response{1, "Do not request repeat!"}
+		c.Data["json"] = r
+		c.ServeJSON()
+		return
+	}
+
+	// insert to cache
+	ic.insertNew(addr, ip)
+
+	// view database
+	hisrecoder := models.ReturnTimeIfExist(addr, ip)
+
 	amount, err := c.GetFloat("amount")
 	if err != nil {
 		r := Response{1, "Get Amount error"}
@@ -65,9 +87,6 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
-
-	ip := c.Ctx.Input.IP()
-	hisrecoder := models.ReturnTimeIfExist(addr, ip)
 
 	if hisrecoder != nil {
 		updated := hisrecoder.Updated
