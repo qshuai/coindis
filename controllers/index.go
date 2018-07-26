@@ -30,16 +30,24 @@ var interval int64
 var ic = newInfoCache()
 
 func (c *IndexController) Get() {
-	datalist := models.GetHistoryLimit100()
-	client = Client()
-	amount, err := client.GetBalance("")
-	if err != nil {
-		amount = btcutil.Amount(balance)
+	dataList := models.GetHistoryLimit100()
+
+	var amount btcutil.Amount
+	if balance <= 0 {
+		client = Client()
+		var err error
+		amount, err = client.GetBalance("")
+		if err != nil {
+			amount = btcutil.Amount(balance)
+		}
+
+		// cache balance
+		balance = int64(amount)
 	}
 
 	c.Data["addr"] = conf.String("addr")
 	c.Data["balance"] = amount.String()
-	c.Data["list"] = datalist
+	c.Data["list"] = dataList
 	c.TplName = "index.html"
 }
 
@@ -106,6 +114,9 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
+
+	// update balance at this time
+	balance -= int64(amount * 1e8)
 
 	o := orm.NewOrm()
 	if hisrecoder != nil && hisrecoder.Address == addr && hisrecoder.IP == ip {
