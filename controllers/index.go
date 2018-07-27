@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"sync/atomic"
 	"time"
 
 	"coindis/models"
@@ -32,19 +33,20 @@ var ic = newInfoCache()
 func (c *IndexController) Get() {
 	dataList := models.GetHistoryLimit100()
 
-	if balance <= 1 {
+	old := atomic.LoadInt64(&balance)
+	if old <= 1 {
 		client = Client()
 		amount, err := client.GetBalance("")
 		if err != nil {
-			amount = btcutil.Amount(balance)
+			amount = btcutil.Amount(old)
 		}
 
 		// cache balance
-		balance = int64(amount)
+		atomic.SwapInt64(&balance, int64(amount))
 	}
 
 	c.Data["addr"] = conf.String("addr")
-	c.Data["balance"] = btcutil.Amount(balance).String()
+	c.Data["balance"] = btcutil.Amount(atomic.LoadInt64(&balance)).String()
 	c.Data["list"] = dataList
 	c.TplName = "index.html"
 }
@@ -115,7 +117,7 @@ func (c *IndexController) Post() {
 	}
 
 	// update balance at this time
-	balance -= int64(amount * 1e8)
+	atomic.SwapInt64(&balance, atomic.LoadInt64(&balance)-int64(amount*1e8))
 
 	o := orm.NewOrm()
 	if hisrecoder != nil && hisrecoder.Address == addr && hisrecoder.IP == ip {
@@ -180,5 +182,10 @@ func init() {
 	interval, err = conf.Int64("interval")
 	if err != nil {
 		panic(err)
+	}
+
+	ticker := time.NewTicker(time.Minute * 60)
+	for _ = range ticker.C {
+		updateBalance()
 	}
 }
