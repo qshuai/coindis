@@ -9,9 +9,9 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/config"
 	"github.com/astaxie/beego/orm"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcutil"
+	"github.com/bcext/cashutil"
+	"github.com/bcext/gcash/chaincfg"
+	"github.com/bcext/gcash/rpcclient"
 )
 
 type IndexController struct {
@@ -38,7 +38,7 @@ func (c *IndexController) Get() {
 		client = Client()
 		amount, err := client.GetBalance("")
 		if err != nil {
-			amount = btcutil.Amount(old)
+			amount = cashutil.Amount(old)
 		}
 
 		// cache balance
@@ -46,7 +46,7 @@ func (c *IndexController) Get() {
 	}
 
 	c.Data["addr"] = conf.String("addr")
-	c.Data["balance"] = btcutil.Amount(atomic.LoadInt64(&balance)).String()
+	c.Data["balance"] = cashutil.Amount(atomic.LoadInt64(&balance)).String()
 	c.Data["list"] = dataList
 	c.TplName = "index.html"
 }
@@ -86,7 +86,7 @@ func (c *IndexController) Post() {
 	// view database, refused for less than one day's request
 	hisrecoder := models.ReturnTimeIfExist(addr, ip)
 
-	address, err := btcutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
+	address, err := cashutil.DecodeCashAddr(addr, &chaincfg.TestNet3Params)
 	if err != nil {
 		r := Response{1, "Decode Address error"}
 		c.Data["json"] = r
@@ -108,7 +108,7 @@ func (c *IndexController) Post() {
 	ic.insertNew(addr, ip)
 
 	client = Client()
-	txid, err := client.SendToAddress(address, btcutil.Amount(amount*1e8))
+	txid, err := client.SendToAddress(address, cashutil.Amount(amount*1e8))
 	if err != nil {
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
@@ -184,8 +184,10 @@ func init() {
 		panic(err)
 	}
 
-	ticker := time.NewTicker(time.Minute * 60)
-	for _ = range ticker.C {
-		updateBalance()
-	}
+	go func() {
+		ticker := time.NewTicker(time.Minute * 60)
+		for _ = range ticker.C {
+			updateBalance()
+		}
+	}()
 }
