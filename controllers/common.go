@@ -50,14 +50,14 @@ func (c *infoCache) clean() {
 	now := time.Now()
 	for address, t := range c.addressMap {
 		// over 1 minute, clean
-		if now.Sub(t) > time.Duration(60) {
+		if now.Sub(t) > time.Duration(60*time.Minute) {
 			delete(c.addressMap, address)
 		}
 	}
 
 	for ip, t := range c.addressMap {
 		// over 1 minute, clean
-		if now.Sub(t) > time.Duration(60) {
+		if now.Sub(t) > time.Duration(60*time.Minute) {
 			delete(c.addressMap, ip)
 		}
 	}
