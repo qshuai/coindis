@@ -127,7 +127,7 @@ func (c *IndexController) Post() {
 		o.Update(his, "amount", "updated")
 	} else {
 		his := models.History{
-			Address: address.String(),
+			Address: cashutil.EncodeCashAddr(address, &chaincfg.TestNet3Params),
 			IP:      ip,
 			Amount:  amount,
 		}
