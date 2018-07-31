@@ -2,19 +2,19 @@ appname = coindis
 httpport = 9090
 runmode = dev
 
-addr = "mh1KrP1J58EYuGCctmUUYKjJMpLmDYM73n"
+addr = "bchtest:qpytyr39fsr80emqh2ukftkpdqvdddcnfg9s6wjtfa"
 limit = 0.1
 interval = 86400
 
 [rpc]
 url="127.0.0.1"
 port="18332"
-user="rpc"
-passwd="rpc"
+user="rpc-username"
+passwd="rpc-password"
 
 [mysql]
-username = root
-password = 646689abc
+username = mysql-username
+password = mysql-password
 host = 127.0.0.1
 port = 3306
 database = faucet
