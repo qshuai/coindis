@@ -43,6 +43,14 @@ func (c *infoCache) insertNew(address, ip string) {
 	c.ipMap[ip] = now
 }
 
+func (c *infoCache) removeOne(address, ip string) {
+	c.Lock()
+	c.Unlock()
+
+	delete(c.addressMap, address)
+	delete(c.ipMap, ip)
+}
+
 func (c *infoCache) clean() {
 	c.Lock()
 	c.Unlock()

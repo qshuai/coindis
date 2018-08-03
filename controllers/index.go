@@ -86,7 +86,7 @@ func (c *IndexController) Post() {
 	// view database, refused for less than one day's request
 	hisrecoder := models.ReturnTimeIfExist(addr, ip)
 
-	address, err := cashutil.DecodeCashAddr(addr, &chaincfg.TestNet3Params)
+	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
 	if err != nil {
 		r := Response{1, "Decode Address error"}
 		c.Data["json"] = r
@@ -110,6 +110,8 @@ func (c *IndexController) Post() {
 	client = Client()
 	txid, err := client.SendToAddress(address, cashutil.Amount(amount*1e8))
 	if err != nil {
+		// unlucky, to remove the cache for request again.
+		ic.removeOne(addr, ip)
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -127,7 +129,7 @@ func (c *IndexController) Post() {
 		o.Update(his, "amount", "updated")
 	} else {
 		his := models.History{
-			Address: cashutil.EncodeCashAddr(address, &chaincfg.TestNet3Params),
+			Address: address.EncodeAddress(true),
 			IP:      ip,
 			Amount:  amount,
 		}
