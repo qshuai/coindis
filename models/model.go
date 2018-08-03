@@ -20,7 +20,7 @@ type History struct {
 func init() {
 	orm.Debug = true
 
-	//获取配置信息
+	//get mysql configuration
 	username := beego.AppConfig.String("mysql::username")
 	password := beego.AppConfig.String("mysql::password")
 	host := beego.AppConfig.String("mysql::host")

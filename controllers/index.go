@@ -126,7 +126,7 @@ func (c *IndexController) Post() {
 		his := models.History{
 			Amount: amount,
 		}
-		o.Update(his, "amount", "updated")
+		o.Update(&his, "amount", "updated")
 	} else {
 		his := models.History{
 			Address: address.EncodeAddress(true),
