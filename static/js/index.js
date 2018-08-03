@@ -16,7 +16,6 @@ $("#sendbtn").click(function () {
         },
         error: function (response, status, xhr) {
             $("#msg").removeClass("text-success").addClass("text-danger").text("Send error: network disconnected");
-            $(".txlist").before($('<li class="list-group-item"><span class="badge">'+ $("#amount").val() + '</span>' + $("#address").val() + '</li>'))
         }
     })
 });
