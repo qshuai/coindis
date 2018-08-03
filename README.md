@@ -4,13 +4,19 @@ This repository aims to distribute BCH for free by setuping a web server connect
 
 ### SetUp:
 
-1. Get this repository:
+1. Install dependencies:
 
    ```
-   go get github.com/qshuai/coindis
+   go get github.com/bcext/gcash
+   go get github.com/astaxie/beego
    ```
 
-2. Configure your configuration file 
+2. Clone this repository:
+
+    ```
+    git clone github.com/qshuai/coindis $GOPATH/src/coindis
+    ```
+3. Configure your configuration file 
 
    ```
    cd $GOPATH/src/github.com/qshuai/coindis
@@ -18,7 +24,7 @@ This repository aims to distribute BCH for free by setuping a web server connect
    vim conf/app.conf
    ```
 
-3. Run APP
+4. Run APP
 
    ```
    cd $GOPATH/src/github.com/qshuai/coindis
