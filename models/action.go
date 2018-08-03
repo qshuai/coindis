@@ -10,10 +10,10 @@ func GetHistoryLimit100() (his []*History) {
 	return
 }
 
-func ReturnTimeIfExist(addr, ip string) *History {
+func ReturnTimeIfExist(addr string) *History {
 	o := orm.NewOrm()
 	cond := orm.NewCondition()
-	cond1 := cond.Or("address", addr).Or("ip", ip)
+	cond1 := cond.Or("address", addr)
 
 	his := &History{}
 	err := o.QueryTable("history").SetCond(cond1).OrderBy("-updated").Limit(1).One(his)

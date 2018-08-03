@@ -60,13 +60,6 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
-	ip := c.Ctx.Input.IP()
-	if ic.isExit(ip) {
-		r := Response{1, "Do not request repeat!"}
-		c.Data["json"] = r
-		c.ServeJSON()
-		return
-	}
 
 	// get and parse amount
 	amount, err := c.GetFloat("amount")
@@ -84,7 +77,7 @@ func (c *IndexController) Post() {
 	}
 
 	// view database, refused for less than one day's request
-	hisrecoder := models.ReturnTimeIfExist(addr, ip)
+	hisrecoder := models.ReturnTimeIfExist(addr)
 
 	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
 	if err != nil {
@@ -105,13 +98,13 @@ func (c *IndexController) Post() {
 	}
 
 	// insert to cache， because it will be successful mostly!
-	ic.insertNew(addr, ip)
+	ic.insertNew(addr)
 
 	client = Client()
 	txid, err := client.SendToAddress(address, cashutil.Amount(amount*1e8))
 	if err != nil {
 		// unlucky, to remove the cache for request again.
-		ic.removeOne(addr, ip)
+		ic.removeOne(addr)
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -122,7 +115,7 @@ func (c *IndexController) Post() {
 	atomic.SwapInt64(&balance, atomic.LoadInt64(&balance)-int64(amount*1e8))
 
 	o := orm.NewOrm()
-	if hisrecoder != nil && hisrecoder.Address == addr && hisrecoder.IP == ip {
+	if hisrecoder != nil && hisrecoder.Address == addr {
 		his := models.History{
 			Amount: amount,
 		}
@@ -130,7 +123,6 @@ func (c *IndexController) Post() {
 	} else {
 		his := models.History{
 			Address: address.EncodeAddress(true),
-			IP:      ip,
 			Amount:  amount,
 		}
 		o.Insert(&his)
