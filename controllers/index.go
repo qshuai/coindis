@@ -122,11 +122,14 @@ func (c *IndexController) Post() {
 	atomic.SwapInt64(&balance, atomic.LoadInt64(&balance)-int64(amount*1e8))
 
 	o := orm.NewOrm()
-	if hisrecoder != nil && hisrecoder.Address == addr && hisrecoder.IP == ip {
+	if hisrecoder != nil {
 		his := models.History{
-			Amount: amount,
+			Id:      hisrecoder.Id,
+			Address: addr,
+			IP:      ip,
+			Amount:  amount,
 		}
-		o.Update(&his, "amount", "updated")
+		o.Update(&his, "amount", "address", "ip", "updated")
 	} else {
 		his := models.History{
 			Address: address.EncodeAddress(true),
