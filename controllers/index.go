@@ -171,6 +171,12 @@ func Client() *rpcclient.Client {
 		os.Exit(1)
 	}
 
+	err = client.Ping()
+	if err != nil {
+		logrus.Error("rpc connection error: " + err.Error())
+		os.Exit(1)
+	}
+
 	client = c
 	return c
 }
