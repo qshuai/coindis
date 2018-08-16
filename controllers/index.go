@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/bcext/cashutil"
 	"github.com/bcext/gcash/chaincfg"
 	"github.com/bcext/gcash/rpcclient"
+	"github.com/sirupsen/logrus"
 )
 
 type IndexController struct {
@@ -165,7 +167,8 @@ func Client() *rpcclient.Client {
 	// not supported in HTTP POST mode.
 	c, err := rpcclient.New(connCfg, nil)
 	if err != nil {
-		panic(err)
+		logrus.Error(err.Error())
+		os.Exit(1)
 	}
 
 	client = c
@@ -188,6 +191,19 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	level, err := logrus.ParseLevel(conf.String("log::level"))
+	if err != nil {
+		panic(err)
+	}
+	logrus.SetLevel(level)
+
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05", DisableTimestamp: false})
+	file, err := os.OpenFile("./logs/"+conf.String("log::filename"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.FileMode(0644))
+	if err != nil {
+		panic(err)
+	}
+	logrus.SetOutput(file)
 
 	go func() {
 		ticker := time.NewTicker(time.Minute * 60)

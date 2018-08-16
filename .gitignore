@@ -2,3 +2,5 @@
 app.conf
 coindis
 nohup.out
+
+*.log
