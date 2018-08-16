@@ -175,6 +175,17 @@ func Client() *rpcclient.Client {
 	return c
 }
 
+func updateBalance() {
+	client := Client()
+	amount, err := client.GetBalance("")
+	if err != nil {
+		logrus.Error("update balance via rpc failed: " + err.Error())
+		return
+	}
+
+	atomic.SwapInt64(&balance, int64(amount))
+}
+
 func init() {
 	var err error
 	conf, err = config.NewConfig("ini", "conf/app.conf")
