@@ -25,12 +25,14 @@ type Response struct {
 	Message string
 }
 
-var conf config.Configer
-var client *rpcclient.Client
-var balance int64
-var limit float64
-var interval int64
-var ic = newInfoCache()
+var (
+	conf     config.Configer
+	client   *rpcclient.Client
+	balance  int64
+	limit    float64
+	interval int64
+	ic       = newInfoCache()
+)
 
 func (c *IndexController) Get() {
 	dataList := models.GetHistoryLimit100()
