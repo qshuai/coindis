@@ -1,9 +1,8 @@
 package routers
 
 import (
-	"coindis/controllers"
-
 	"github.com/astaxie/beego"
+	"github.com/qshuai/coindis/controllers"
 )
 
 func init() {

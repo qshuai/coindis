@@ -4,14 +4,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"coindis/models"
-
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/config"
 	"github.com/astaxie/beego/orm"
 	"github.com/bcext/cashutil"
 	"github.com/bcext/gcash/chaincfg"
 	"github.com/bcext/gcash/rpcclient"
+	"github.com/qshuai/coindis/models"
 )
 
 type IndexController struct {

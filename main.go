@@ -1,9 +1,8 @@
 package main
 
 import (
-	_ "coindis/routers"
-
 	"github.com/astaxie/beego"
+	_ "github.com/qshuai/coindis/routers"
 )
 
 func main() {
