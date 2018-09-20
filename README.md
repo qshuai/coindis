@@ -14,13 +14,14 @@ This repository aims to distribute BCH for free by setuping a web server connect
 2. Clone this repository:
 
     ```
-    git clone github.com/qshuai/coindis $GOPATH/src/coindis
+    mkdir -p $GOPATH/src/qshuai
+    git clone https://github.com/qshuai/coindis.git $GOPATH/src/qshuai/coindis
     ```
 3. Configure your configuration file 
 
    ```
    cd $GOPATH/src/github.com/qshuai/coindis
-   cp conf/app.conf.sample conf/app.conf
+   mv conf/app.conf.sample conf/app.conf
    vim conf/app.conf
    ```
 
