@@ -2,7 +2,7 @@ appname = coindis
 httpport = 9090
 runmode = dev
 
-addr = "bchtest:qpytyr39fsr80emqh2ukftkpdqvdddcnfg9s6wjtfa"
+addr = "bchtest:qrt77hz8slndyem7hhmpn6slqk0dl8zmecrl52j6kn"
 limit = 0.1
 interval = 86400
 
