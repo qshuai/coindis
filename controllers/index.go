@@ -37,7 +37,7 @@ func (c *IndexController) Get() {
 	dataList := models.GetHistoryLimit100()
 
 	old := atomic.LoadInt64(&balance)
-	if old <= 1 {
+	if old <= 10 {
 		client = Client()
 		amount, err := client.GetBalance("")
 		if err != nil {
@@ -224,7 +224,7 @@ func init() {
 	logrus.SetOutput(file)
 
 	go func() {
-		ticker := time.NewTicker(time.Minute * 60)
+		ticker := time.NewTicker(time.Minute * 15)
 		for _ = range ticker.C {
 			updateBalance()
 			ic.clean()
