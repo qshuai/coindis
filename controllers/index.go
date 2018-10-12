@@ -178,7 +178,7 @@ func init() {
 	}
 
 	go func() {
-		ticker := time.NewTicker(time.Minute * 60)
+		ticker := time.NewTicker(time.Minute * 10)
 		for _ = range ticker.C {
 			updateBalance()
 			ic.clean()
