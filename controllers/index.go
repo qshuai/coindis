@@ -49,6 +49,7 @@ func (c *IndexController) Get() {
 	}
 
 	c.Data["addr"] = conf.String("addr")
+	c.Data["limit"] = limit
 	c.Data["balance"] = cashutil.Amount(atomic.LoadInt64(&balance)).String()
 	c.Data["list"] = dataList
 	c.TplName = "index.html"
@@ -169,10 +170,10 @@ func Client() *rpcclient.Client {
 	c, err := rpcclient.New(connCfg, nil)
 	if err != nil {
 		logrus.Error(err.Error())
-		os.Exit(1)
+		panic(err)
 	}
 
-	err = client.Ping()
+	err = c.Ping()
 	if err != nil {
 		logrus.Error("rpc connection error: " + err.Error())
 		os.Exit(1)
@@ -216,8 +217,13 @@ func init() {
 	}
 	logrus.SetLevel(level)
 
+	_, err = os.Stat("./logs/")
+	if os.IsNotExist(err) {
+		os.MkdirAll("./logs", 0766)
+	}
+
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05", DisableTimestamp: false})
-	file, err := os.OpenFile("./logs/"+conf.String("log::filename"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.FileMode(0644))
+	file, err := os.OpenFile("./logs/"+conf.String("log::filename")+".log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.FileMode(0644))
 	if err != nil {
 		panic(err)
 	}
