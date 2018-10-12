@@ -3,6 +3,8 @@ package controllers
 import (
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type infoCache struct {
@@ -68,4 +70,6 @@ func (c *infoCache) clean() {
 			delete(c.addressMap, ip)
 		}
 	}
+
+	logrus.Info("clear addresses cache")
 }

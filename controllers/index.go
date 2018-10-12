@@ -191,6 +191,8 @@ func updateBalance() {
 		return
 	}
 
+	logrus.Info("update balance via rpc request")
+
 	atomic.SwapInt64(&balance, int64(amount))
 }
 
