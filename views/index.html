@@ -20,29 +20,6 @@
         <div class="navbar-header">
             <a class="navbar-brand" href="#">CoinDis</a>
         </div>
-
-        <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav">
-                {{/*<li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>*/}}
-                {{/*<li><a href="#">Link</a></li>*/}}
-                {{/*<li class="dropdown">*/}}
-                    {{/*<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Dropdown <span class="caret"></span></a>*/}}
-                    {{/*<ul class="dropdown-menu">*/}}
-                        {{/*<li><a href="#">Action</a></li>*/}}
-                        {{/*<li><a href="#">Another action</a></li>*/}}
-                        {{/*<li><a href="#">Something else here</a></li>*/}}
-                        {{/*<li role="separator" class="divider"></li>*/}}
-                        {{/*<li><a href="#">Separated link</a></li>*/}}
-                        {{/*<li role="separator" class="divider"></li>*/}}
-                        {{/*<li><a href="#">One more separated link</a></li>*/}}
-                    {{/*</ul>*/}}
-                {{/*</li>*/}}
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                {{/*<li><a href="#">Link</a></li>*/}}
-            </ul>
-        </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
 </nav>
 
@@ -63,6 +40,7 @@
                <label for="amount">Amount:</label>
                <input type="text" class="form-control" id="amount" placeholder="Max Amount: {{.limit}}">
            </fieldset>
+           <a class="github-button" href="https://github.com/qshuai/coindis" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star qshuai/coindis on GitHub">Star</a><br>
            <a id="sendbtn" class="btn btn-primary">Send</a> &nbsp;&nbsp;&nbsp;<strong id="msg"></strong>
        </form>
    </div>
@@ -89,6 +67,8 @@
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<!-- Place this tag in your head or just before your close body tag. -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>
 <script src="/static/js/index.js"></script>
 </body>
 </html>
