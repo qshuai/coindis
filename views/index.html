@@ -34,11 +34,11 @@
        <form>
            <fieldset class="form-group">
                <label for="address">Bitcoin cash address:</label>
-               <input type="text" class="form-control" id="address" placeholder="eg: bchtest:qpytyr39fsr80emqh2ukftkpdqvdddcnfg9s6wjtfa">
+               <input type="text" class="form-control" id="address" placeholder="eg: {{.addr}}">
            </fieldset>
            <fieldset class="form-group">
                <label for="amount">Amount:</label>
-               <input type="text" class="form-control" id="amount" placeholder="Max Amount: 0.1">
+               <input type="text" class="form-control" id="amount" placeholder="Max Amount: {{.limit}}">
            </fieldset>
            <a class="github-button" href="https://github.com/qshuai/coindis" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star qshuai/coindis on GitHub">Star</a><br>
            <a id="sendbtn" class="btn btn-primary">Send</a> &nbsp;&nbsp;&nbsp;<strong id="msg"></strong>

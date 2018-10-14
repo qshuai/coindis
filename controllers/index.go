@@ -46,6 +46,7 @@ func (c *IndexController) Get() {
 
 	c.Data["addr"] = conf.String("addr")
 	c.Data["balance"] = cashutil.Amount(atomic.LoadInt64(&balance)).String()
+	c.Data["limit"] = limit
 	c.Data["list"] = dataList
 	c.TplName = "index.html"
 }
