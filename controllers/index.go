@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"os"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -100,8 +101,8 @@ func (c *IndexController) Post() {
 
 	if hisrecoder != nil {
 		now := time.Now()
-		if now.Sub(hisrecoder.Updated) < time.Duration(interval) {
-			r := Response{1, "Request Interval less than one day"}
+		if now.Sub(hisrecoder.Updated).Seconds() < float64(interval) {
+			r := Response{1, "Request Interval less than " + strconv.Itoa(int(interval)) + " s"}
 			c.Data["json"] = r
 			c.ServeJSON()
 			return
