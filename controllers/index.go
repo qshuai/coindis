@@ -59,7 +59,9 @@ func (c *IndexController) Get() {
 func (c *IndexController) Post() {
 	// get bitcoin address and ip from request body
 	addr := c.GetString("address")
-	if ic.isExit(addr) {
+	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
+	bech32Address := address.EncodeAddress(true)
+	if ic.isExit(bech32Address) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -89,9 +91,8 @@ func (c *IndexController) Post() {
 	}
 
 	// view database, refused for less than one day's request
-	hisrecoder := models.ReturnTimeIfExist(addr, ip)
+	hisrecoder := models.ReturnTimeIfExist(bech32Address, ip)
 
-	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
 	if err != nil {
 		r := Response{1, "Decode Address error"}
 		c.Data["json"] = r
@@ -110,13 +111,13 @@ func (c *IndexController) Post() {
 	}
 
 	// insert to cache， because it will be successful mostly!
-	ic.insertNew(addr, ip)
+	ic.insertNew(bech32Address, ip)
 
 	client = Client()
 	txid, err := client.SendToAddress(address, cashutil.Amount(amount*1e8))
 	if err != nil {
 		// unlucky, to remove the cache for request again.
-		ic.removeOne(addr, ip)
+		ic.removeOne(bech32Address, ip)
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -130,14 +131,14 @@ func (c *IndexController) Post() {
 	if hisrecoder != nil {
 		his := models.History{
 			Id:      hisrecoder.Id,
-			Address: addr,
+			Address: bech32Address,
 			IP:      ip,
 			Amount:  amount + hisrecoder.Amount,
 		}
 		o.Update(&his, "amount", "address", "ip", "updated")
 	} else {
 		his := models.History{
-			Address: address.EncodeAddress(true),
+			Address: bech32Address,
 			IP:      ip,
 			Amount:  amount,
 		}
@@ -233,7 +234,7 @@ func init() {
 	logrus.SetOutput(file)
 
 	go func() {
-		ticker := time.NewTicker(time.Minute * 15)
+		ticker := time.NewTicker(time.Minute * 30)
 		for _ = range ticker.C {
 			updateBalance()
 			ic.clean()
