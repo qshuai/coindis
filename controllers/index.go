@@ -132,7 +132,7 @@ func (c *IndexController) Post() {
 			Id:      hisrecoder.Id,
 			Address: addr,
 			IP:      ip,
-			Amount:  amount,
+			Amount:  amount + hisrecoder.Amount,
 		}
 		o.Update(&his, "amount", "address", "ip", "updated")
 	} else {
