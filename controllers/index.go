@@ -37,18 +37,6 @@ var (
 func (c *IndexController) Get() {
 	dataList := models.GetHistoryLimit100()
 
-	old := atomic.LoadInt64(&balance)
-	if old <= 10 {
-		client = Client()
-		amount, err := client.GetBalance("")
-		if err != nil {
-			amount = cashutil.Amount(old)
-		}
-
-		// cache balance
-		atomic.SwapInt64(&balance, int64(amount))
-	}
-
 	c.Data["addr"] = conf.String("addr")
 	c.Data["limit"] = limit
 	c.Data["balance"] = cashutil.Amount(atomic.LoadInt64(&balance)).String()
@@ -102,7 +90,8 @@ func (c *IndexController) Post() {
 
 	if hisrecoder != nil {
 		now := time.Now()
-		if now.Sub(hisrecoder.Updated).Seconds() < float64(interval) {
+		diff := now.Sub(hisrecoder.Updated).Seconds()
+		if diff < float64(interval) {
 			r := Response{1, "Request Interval less than " + strconv.Itoa(int(interval)) + " s"}
 			c.Data["json"] = r
 			c.ServeJSON()
@@ -205,6 +194,9 @@ func init() {
 		panic(err)
 	}
 
+	// init balance
+	updateBalance()
+
 	limit, err = conf.Float("limit")
 	if err != nil {
 		panic(err)
@@ -234,7 +226,7 @@ func init() {
 	logrus.SetOutput(file)
 
 	go func() {
-		ticker := time.NewTicker(time.Minute * 30)
+		ticker := time.NewTicker(time.Second * 30)
 		for _ = range ticker.C {
 			updateBalance()
 			ic.clean()
