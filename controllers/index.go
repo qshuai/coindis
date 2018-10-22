@@ -54,6 +54,7 @@ func (c *IndexController) Post() {
 	addr := c.GetString("address")
 	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
 	if err != nil {
+		logrus.Debugf("the input address: %s", addr)
 		r := Response{1, "The address not correct"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -78,6 +79,7 @@ func (c *IndexController) Post() {
 	// get and parse amount
 	amount, err := c.GetFloat("amount")
 	if err != nil {
+		logrus.Debugf("the input amount: %s", amount)
 		r := Response{1, "Get Amount error"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -92,14 +94,6 @@ func (c *IndexController) Post() {
 
 	// view database, refused for less than one day's request
 	hisrecoder := models.ReturnTimeIfExist(bech32Address, ip)
-
-	if err != nil {
-		r := Response{1, "Decode Address error"}
-		c.Data["json"] = r
-		c.ServeJSON()
-		return
-	}
-
 	if hisrecoder != nil {
 		now := time.Now()
 		diff := now.Sub(hisrecoder.Updated).Seconds()
@@ -117,6 +111,7 @@ func (c *IndexController) Post() {
 	client = Client()
 	txid, err := client.SendToAddress(address, cashutil.Amount(amount*1e8))
 	if err != nil {
+		logrus.Debugf("create transaction error: %v", err)
 		// unlucky, to remove the cache for request again.
 		ic.removeOne(bech32Address, ip)
 		r := Response{1, "Create Transaction error"}
@@ -207,19 +202,6 @@ func init() {
 		panic(err)
 	}
 
-	// init balance
-	updateBalance()
-
-	limit, err = conf.Float("limit")
-	if err != nil {
-		panic(err)
-	}
-
-	interval, err = conf.Int64("interval")
-	if err != nil {
-		panic(err)
-	}
-
 	level, err := logrus.ParseLevel(conf.String("log::level"))
 	if err != nil {
 		panic(err)
@@ -237,6 +219,19 @@ func init() {
 		panic(err)
 	}
 	logrus.SetOutput(file)
+
+	// init balance
+	updateBalance()
+
+	limit, err = conf.Float("limit")
+	if err != nil {
+		panic(err)
+	}
+
+	interval, err = conf.Int64("interval")
+	if err != nil {
+		panic(err)
+	}
 
 	go func() {
 		ticker := time.NewTicker(time.Second * 30)
