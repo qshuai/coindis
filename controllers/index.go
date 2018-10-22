@@ -227,6 +227,11 @@ func init() {
 
 	go func() {
 		ticker := time.NewTicker(time.Second * 30)
+		defer func() {
+			ticker.Stop()
+			logrus.Error("the goroutine holds the ticker for updating balance and cache clean existed")
+		}()
+
 		for _ = range ticker.C {
 			updateBalance()
 			ic.clean()
