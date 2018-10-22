@@ -45,6 +45,11 @@ func (c *IndexController) Get() {
 }
 
 func (c *IndexController) Post() {
+	logrus.WithFields(logrus.Fields{
+		"address": c.GetString("address"),
+		"amount":  c.GetString("amount"),
+	}).Debugf("received post request")
+
 	// get bitcoin address and ip from request body
 	addr := c.GetString("address")
 	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
@@ -237,4 +242,6 @@ func init() {
 			ic.clean()
 		}
 	}()
+
+	logrus.Info("the coindis program started!")
 }
