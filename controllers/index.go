@@ -53,6 +53,13 @@ func (c *IndexController) Post() {
 	// get bitcoin address and ip from request body
 	addr := c.GetString("address")
 	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
+	if err != nil {
+		r := Response{1, "The address not correct"}
+		c.Data["json"] = r
+		c.ServeJSON()
+		return
+	}
+
 	bech32Address := address.EncodeAddress(true)
 	if ic.isExit(bech32Address) {
 		r := Response{1, "Do not request repeat!"}
@@ -122,7 +129,7 @@ func (c *IndexController) Post() {
 	atomic.SwapInt64(&balance, atomic.LoadInt64(&balance)-int64(amount*1e8))
 
 	o := orm.NewOrm()
-	if hisrecoder != nil {
+	if hisrecoder != nil && hisrecoder.Address == bech32Address {
 		his := models.History{
 			Id:      hisrecoder.Id,
 			Address: bech32Address,
@@ -148,6 +155,7 @@ func Client() *rpcclient.Client {
 	if client != nil {
 		return client
 	}
+
 	// acquire configure item
 	link := conf.String("rpc::url") + ":" + conf.String("rpc::port")
 	user := conf.String("rpc::user")
@@ -234,11 +242,22 @@ func init() {
 		ticker := time.NewTicker(time.Second * 30)
 		defer func() {
 			ticker.Stop()
-			logrus.Error("the goroutine holds the ticker for updating balance and cache clean existed")
+			logrus.Error("the goroutine holds the ticker for updating balance existed")
 		}()
 
 		for _ = range ticker.C {
 			updateBalance()
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(time.Second * 30)
+		defer func() {
+			ticker.Stop()
+			logrus.Error("the goroutine holds the ticker for cache clean existed")
+		}()
+
+		for _ = range ticker.C {
 			ic.clean()
 		}
 	}()
