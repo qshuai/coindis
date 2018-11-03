@@ -260,7 +260,7 @@ func init() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(time.Hour * 6)
+		ticker := time.NewTicker(time.Minute * 10)
 		defer func() {
 			ticker.Stop()
 			logrus.Error("the goroutine holds the ticker for cache clean existed")
