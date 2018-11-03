@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"os"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -98,9 +97,9 @@ func (c *IndexController) Post() {
 	hisrecoder := models.ReturnTimeIfExist(bech32Address, ip)
 	if hisrecoder != nil {
 		now := time.Now()
-		diff := now.Sub(hisrecoder.Updated).Seconds()
+		diff := now.Sub(hisrecoder.Updated).Hours()
 		if diff < float64(interval) {
-			r := Response{1, "Request Interval less than " + strconv.Itoa(int(interval)) + " s"}
+			r := Response{1, "request frequently"}
 			c.Data["json"] = r
 			c.ServeJSON()
 			return
@@ -261,7 +260,7 @@ func init() {
 	}()
 
 	go func() {
-		ticker := time.NewTicker(time.Second * 30)
+		ticker := time.NewTicker(time.Hour * 6)
 		defer func() {
 			ticker.Stop()
 			logrus.Error("the goroutine holds the ticker for cache clean existed")
