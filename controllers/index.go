@@ -3,11 +3,13 @@ package controllers
 import (
 	"os"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/config"
+	"github.com/astaxie/beego/context"
 	"github.com/astaxie/beego/orm"
 	"github.com/bcext/cashutil"
 	"github.com/bcext/gcash/chaincfg"
@@ -68,7 +70,7 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
-	ip := c.Ctx.Input.IP()
+	ip := getClientIP(c.Ctx)
 	if ic.isExit(ip) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
@@ -144,6 +146,19 @@ func (c *IndexController) Post() {
 	r := Response{0, txid.String()}
 	c.Data["json"] = r
 	c.ServeJSON()
+}
+
+func getClientIP(ctx *context.Context) string {
+	ip := ctx.Request.Header.Get("X-Forwarded-For")
+	if strings.Contains(ip, "127.0.0.1") || ip == "" {
+		ip = ctx.Request.Header.Get("X-real-ip")
+	}
+
+	if ip == "" {
+		return "127.0.0.1"
+	}
+
+	return ip
 }
 
 func Client() *rpcclient.Client {
