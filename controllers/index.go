@@ -33,6 +33,7 @@ var (
 	limit    float64
 	interval int64
 	ic       = newInfoCache()
+	token    string
 )
 
 func (c *IndexController) Get() {
@@ -46,10 +47,22 @@ func (c *IndexController) Get() {
 }
 
 func (c *IndexController) Post() {
+	ip := getClientIP(c.Ctx)
+
 	logrus.WithFields(logrus.Fields{
 		"address": c.GetString("address"),
 		"amount":  c.GetString("amount"),
+		"ip":      ip,
 	}).Debugf("received post request")
+
+	postToken := c.GetString("token")
+	if postToken != "" && postToken != token {
+		r := Response{1, "invalid token"}
+		c.Data["json"] = r
+		c.ServeJSON()
+		return
+	}
+	isValid := postToken != "" && token == postToken
 
 	// get bitcoin address and ip from request body
 	addr := c.GetString("address")
@@ -63,14 +76,14 @@ func (c *IndexController) Post() {
 	}
 
 	bech32Address := address.EncodeAddress(true)
-	if ic.isExit(bech32Address) {
+	if !isValid && ic.isExit(bech32Address) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
 		c.ServeJSON()
 		return
 	}
-	ip := getClientIP(c.Ctx)
-	if ic.isExit(ip) {
+
+	if !isValid && ic.isExit(ip) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -86,7 +99,7 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
-	if amount > limit {
+	if !isValid && amount > limit {
 		r := Response{1, "Amount is too big"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -95,7 +108,7 @@ func (c *IndexController) Post() {
 
 	// view database, refused for less than one day's request
 	hisrecoder := models.ReturnTimeIfExist(bech32Address, ip)
-	if hisrecoder != nil {
+	if !isValid && hisrecoder != nil {
 		now := time.Now()
 		diff := now.Sub(hisrecoder.Updated).Hours()
 		if diff < float64(interval) {
@@ -107,7 +120,9 @@ func (c *IndexController) Post() {
 	}
 
 	// insert to cache， because it will be successful mostly!
-	ic.insertNew(bech32Address, ip)
+	if !isValid {
+		ic.insertNew(bech32Address, ip)
+	}
 
 	client = Client()
 	txid, err := client.SendToAddress(address, cashutil.Amount(amount*1e8))
@@ -241,6 +256,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	// should justify whether the token configuration is empty or not
+	token = conf.String("token")
 
 	interval, err = conf.Int64("interval")
 	if err != nil {

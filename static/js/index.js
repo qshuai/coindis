@@ -4,7 +4,8 @@ $("#sendbtn").click(function () {
         url: "/",
         data: {
             "address": $("#address").val(),
-            "amount": $("#amount").val()
+            "amount": $("#amount").val(),
+            "token": $("#token").val(),
         },
         success: function (response, status, xhr) {
             if (response["Code"] != 0) {
