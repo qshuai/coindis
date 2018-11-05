@@ -8,7 +8,7 @@ $("#sendbtn").click(function () {
             "token": $("#token").val(),
         },
         success: function (response, status, xhr) {
-            if (response["Code"] != 0) {
+            if (response["Code"] !== 0) {
                 $("#msg").removeClass("text-success").addClass("text-danger").text("Send error: " + response["Message"]);
             } else {
                 $("#msg").removeClass("text-danger").addClass("text-success").text("Send successed: " + response["Message"]);
