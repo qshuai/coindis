@@ -19,6 +19,14 @@ import (
 
 type IndexController struct {
 	beego.Controller
+
+	conf     config.Configer
+	client   *rpcclient.Client
+	balance  int64
+	limit    float64
+	interval int64
+	ic       *infoCache
+	token    string
 }
 
 type Response struct {
@@ -26,22 +34,12 @@ type Response struct {
 	Message string
 }
 
-var (
-	conf     config.Configer
-	client   *rpcclient.Client
-	balance  int64
-	limit    float64
-	interval int64
-	ic       = newInfoCache()
-	token    string
-)
-
 func (c *IndexController) Get() {
 	dataList := models.GetHistoryLimit100()
 
-	c.Data["addr"] = conf.String("addr")
-	c.Data["limit"] = limit
-	c.Data["balance"] = cashutil.Amount(atomic.LoadInt64(&balance)).String()
+	c.Data["addr"] = c.conf.String("addr")
+	c.Data["limit"] = c.limit
+	c.Data["balance"] = cashutil.Amount(atomic.LoadInt64(&c.balance)).String()
 	c.Data["list"] = dataList
 	c.TplName = "index.html"
 }
@@ -53,16 +51,16 @@ func (c *IndexController) Post() {
 		"address": c.GetString("address"),
 		"amount":  c.GetString("amount"),
 		"ip":      ip,
-	}).Debugf("received post request")
+	}).Debug("received post request")
 
 	postToken := c.GetString("token")
-	if postToken != "" && postToken != token {
+	if postToken != "" && postToken != c.token {
 		r := Response{1, "invalid token"}
 		c.Data["json"] = r
 		c.ServeJSON()
 		return
 	}
-	isValid := postToken != "" && token == postToken
+	isValid := postToken != "" && c.token == postToken
 
 	// get bitcoin address and ip from request body
 	addr := c.GetString("address")
@@ -76,14 +74,14 @@ func (c *IndexController) Post() {
 	}
 
 	bech32Address := address.EncodeAddress(true)
-	if !isValid && ic.isExit(bech32Address) {
+	if !isValid && c.ic.isExit(bech32Address) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
 		c.ServeJSON()
 		return
 	}
 
-	if !isValid && ic.isExit(ip) {
+	if !isValid && c.ic.isExit(ip) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -99,7 +97,7 @@ func (c *IndexController) Post() {
 		c.ServeJSON()
 		return
 	}
-	if !isValid && amount > limit {
+	if !isValid && amount > c.limit {
 		r := Response{1, "Amount is too big"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -111,7 +109,7 @@ func (c *IndexController) Post() {
 	if !isValid && hisrecoder != nil {
 		now := time.Now()
 		diff := now.Sub(hisrecoder.Updated).Hours()
-		if diff < float64(interval) {
+		if diff < float64(c.interval) {
 			r := Response{1, "request frequently"}
 			c.Data["json"] = r
 			c.ServeJSON()
@@ -121,15 +119,15 @@ func (c *IndexController) Post() {
 
 	// insert to cache， because it will be successful mostly!
 	if !isValid {
-		ic.insertNew(bech32Address, ip)
+		c.ic.insertNew(bech32Address, ip)
 	}
 
-	client = Client()
-	txid, err := client.SendToAddress(address, cashutil.Amount(amount*1e8))
+	c.client = Client(c)
+	txid, err := c.client.SendToAddress(address, cashutil.Amount(amount*1e8))
 	if err != nil {
 		logrus.Debugf("create transaction error: %v", err)
 		// unlucky, to remove the cache for request again.
-		ic.removeOne(bech32Address, ip)
+		c.ic.removeOne(bech32Address, ip)
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -137,7 +135,7 @@ func (c *IndexController) Post() {
 	}
 
 	// update balance at this time
-	atomic.SwapInt64(&balance, atomic.LoadInt64(&balance)-int64(amount*1e8))
+	atomic.SwapInt64(&c.balance, atomic.LoadInt64(&c.balance)-int64(amount*1e8))
 
 	o := orm.NewOrm()
 	if hisrecoder != nil && hisrecoder.Address == bech32Address {
@@ -175,15 +173,15 @@ func getClientIP(ctx *context.Context) string {
 	return ip
 }
 
-func Client() *rpcclient.Client {
-	if client != nil {
-		return client
+func Client(c *IndexController) *rpcclient.Client {
+	if c.client != nil {
+		return c.client
 	}
 
 	// acquire configure item
-	link := conf.String("rpc::url") + ":" + conf.String("rpc::port")
-	user := conf.String("rpc::user")
-	passwd := conf.String("rpc::passwd")
+	link := c.conf.String("rpc::url") + ":" + c.conf.String("rpc::port")
+	user := c.conf.String("rpc::user")
+	passwd := c.conf.String("rpc::passwd")
 
 	// rpc client instance
 	connCfg := &rpcclient.ConnConfig{
@@ -195,24 +193,24 @@ func Client() *rpcclient.Client {
 	}
 	// Notice the notification parameter is nil since notifications are
 	// not supported in HTTP POST mode.
-	c, err := rpcclient.New(connCfg, nil)
+	var err error
+	c.client, err = rpcclient.New(connCfg, nil)
 	if err != nil {
 		logrus.Error(err.Error())
 		panic(err)
 	}
 
-	err = c.Ping()
+	err = c.client.Ping()
 	if err != nil {
 		logrus.Error("rpc connection error: " + err.Error())
 		os.Exit(1)
 	}
 
-	client = c
-	return c
+	return c.client
 }
 
-func updateBalance() {
-	client := Client()
+func updateBalance(c *IndexController) {
+	client := Client(c)
 	amount, err := client.GetBalance("")
 	if err != nil {
 		logrus.Error("update balance via rpc failed: " + err.Error())
@@ -221,17 +219,18 @@ func updateBalance() {
 
 	logrus.Info("update balance via rpc request")
 
-	atomic.SwapInt64(&balance, int64(amount))
+	atomic.SwapInt64(&c.balance, int64(amount))
 }
 
 func init() {
 	var err error
-	conf, err = config.NewConfig("ini", "conf/app.conf")
+	var controller IndexController
+	controller.conf, err = config.NewConfig("ini", "conf/app.conf")
 	if err != nil {
 		panic(err)
 	}
 
-	level, err := logrus.ParseLevel(conf.String("log::level"))
+	level, err := logrus.ParseLevel(controller.conf.String("log::level"))
 	if err != nil {
 		panic(err)
 	}
@@ -242,25 +241,29 @@ func init() {
 		os.MkdirAll("./logs", 0766)
 	}
 
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05", DisableTimestamp: false})
-	file, err := os.OpenFile("./logs/"+conf.String("log::filename")+".log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.FileMode(0644))
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05",
+		DisableTimestamp: false})
+
+	file, err := os.OpenFile("./logs/"+controller.conf.String("log::filename")+".log",
+		os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.FileMode(0644))
+
 	if err != nil {
 		panic(err)
 	}
 	logrus.SetOutput(file)
 
 	// init balance
-	updateBalance()
+	updateBalance(&controller)
 
-	limit, err = conf.Float("limit")
+	controller.limit, err = controller.conf.Float("limit")
 	if err != nil {
 		panic(err)
 	}
 
 	// should justify whether the token configuration is empty or not
-	token = conf.String("token")
+	controller.token = controller.conf.String("token")
 
-	interval, err = conf.Int64("interval")
+	controller.interval, err = controller.conf.Int64("interval")
 	if err != nil {
 		panic(err)
 	}
@@ -273,7 +276,7 @@ func init() {
 		}()
 
 		for _ = range ticker.C {
-			updateBalance()
+			updateBalance(&controller)
 		}
 	}()
 
@@ -285,7 +288,7 @@ func init() {
 		}()
 
 		for _ = range ticker.C {
-			ic.clean()
+			controller.ic.clean()
 		}
 	}()
 
