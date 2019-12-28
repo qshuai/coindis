@@ -1,4 +1,4 @@
-package controllers
+package utils
 
 import (
 	"sync"
@@ -7,20 +7,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type infoCache struct {
+type InfoCache struct {
 	sync.Mutex
 	addressMap map[string]time.Time
 	ipMap      map[string]time.Time
 }
 
-func newInfoCache() *infoCache {
-	return &infoCache{
-		addressMap: make(map[string]time.Time),
-		ipMap:      make(map[string]time.Time),
-	}
-}
-
-func (c *infoCache) isExit(key string) bool {
+func (c *InfoCache) IsExit(key string) bool {
 	c.Lock()
 	defer c.Unlock()
 
@@ -35,7 +28,7 @@ func (c *infoCache) isExit(key string) bool {
 	return false
 }
 
-func (c *infoCache) insertNew(address, ip string) {
+func (c *InfoCache) InsertNew(address, ip string) {
 	c.Lock()
 	c.Unlock()
 
@@ -44,7 +37,7 @@ func (c *infoCache) insertNew(address, ip string) {
 	c.ipMap[ip] = now
 }
 
-func (c *infoCache) removeOne(address, ip string) {
+func (c *InfoCache) RemoveOne(address, ip string) {
 	c.Lock()
 	c.Unlock()
 
@@ -52,7 +45,7 @@ func (c *infoCache) removeOne(address, ip string) {
 	delete(c.ipMap, ip)
 }
 
-func (c *infoCache) clean() {
+func (c *InfoCache) Clean() {
 	c.Lock()
 	c.Unlock()
 

@@ -4,3 +4,5 @@ coindis
 nohup.out
 
 *.log
+
+__debug_bin

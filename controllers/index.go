@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"github.com/qshuai/coindis/conf"
+	"github.com/qshuai/coindis/utils"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -25,7 +27,7 @@ type IndexController struct {
 	balance  int64
 	limit    float64
 	interval int64
-	ic       *infoCache
+	ic       *utils.InfoCache
 	token    string
 }
 
@@ -74,14 +76,14 @@ func (c *IndexController) Post() {
 	}
 
 	bech32Address := address.EncodeAddress(true)
-	if !isValid && c.ic.isExit(bech32Address) {
+	if !isValid && c.ic.IsExit(bech32Address) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
 		c.ServeJSON()
 		return
 	}
 
-	if !isValid && c.ic.isExit(ip) {
+	if !isValid && c.ic.IsExit(ip) {
 		r := Response{1, "Do not request repeat!"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -119,7 +121,7 @@ func (c *IndexController) Post() {
 
 	// insert to cache， because it will be successful mostly!
 	if !isValid {
-		c.ic.insertNew(bech32Address, ip)
+		c.ic.InsertNew(bech32Address, ip)
 	}
 
 	c.client = Client(c)
@@ -127,7 +129,7 @@ func (c *IndexController) Post() {
 	if err != nil {
 		logrus.Debugf("create transaction error: %v", err)
 		// unlucky, to remove the cache for request again.
-		c.ic.removeOne(bech32Address, ip)
+		c.ic.RemoveOne(bech32Address, ip)
 		r := Response{1, "Create Transaction error"}
 		c.Data["json"] = r
 		c.ServeJSON()
@@ -225,10 +227,7 @@ func updateBalance(c *IndexController) {
 func init() {
 	var err error
 	var controller IndexController
-	controller.conf, err = config.NewConfig("ini", "conf/app.conf")
-	if err != nil {
-		panic(err)
-	}
+	controller.conf = conf.GetConfig()
 
 	level, err := logrus.ParseLevel(controller.conf.String("log::level"))
 	if err != nil {
@@ -288,7 +287,7 @@ func init() {
 		}()
 
 		for _ = range ticker.C {
-			controller.ic.clean()
+			controller.ic.Clean()
 		}
 	}()
 

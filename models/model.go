@@ -1,10 +1,10 @@
 package models
 
 import (
+	"github.com/astaxie/beego/orm"
+	"github.com/qshuai/coindis/conf"
 	"time"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -19,15 +19,22 @@ type History struct {
 
 func init() {
 	orm.Debug = true
+	config := conf.GetConfig()
 
 	//get mysql configuration
-	username := beego.AppConfig.String("mysql::username")
-	password := beego.AppConfig.String("mysql::password")
-	host := beego.AppConfig.String("mysql::host")
-	port := beego.AppConfig.String("mysql::port")
-	database := beego.AppConfig.String("mysql::database")
-	orm.RegisterDataBase("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&loc=Asia%2FShanghai")
+	username := config.String("mysql::username")
+	password := config.String("mysql::password")
+	host := config.String("mysql::host")
+	port := config.String("mysql::port")
+	database := config.String("mysql::database")
+	err := orm.RegisterDataBase("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&loc=Asia%2FShanghai")
+	if err != nil {
+		panic(err)
+	}
 
 	orm.RegisterModel(new(History))
-	orm.RunSyncdb("default", false, true)
+	err = orm.RunSyncdb("default", false, true)
+	if err != nil {
+		panic(err)
+	}
 }
