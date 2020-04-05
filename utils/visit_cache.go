@@ -68,3 +68,10 @@ func (c *InfoCache) Clean() {
 
 	logrus.Info("clear addresses cache")
 }
+
+func New(capacity int) *InfoCache {
+	return &InfoCache{
+		addressMap: make(map[string]time.Time, capacity),
+		ipMap:      make(map[string]time.Time, capacity),
+	}
+}

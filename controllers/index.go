@@ -7,35 +7,22 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/config"
-	"github.com/astaxie/beego/context"
 	"github.com/astaxie/beego/orm"
-	"github.com/bcext/cashutil"
-	"github.com/bcext/gcash/chaincfg"
-	"github.com/bcext/gcash/rpcclient"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"github.com/gin-gonic/gin"
 	"github.com/qshuai/coindis/models"
+	"github.com/qshuai/coindis/pb"
 	"github.com/qshuai/coindis/utils"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
-type IndexController struct {
-	beego.Controller
-
-	conf     config.Configer
-	client   *rpcclient.Client
-	balance  int64
-	limit    float64
-	interval int64
-	ic       *utils.InfoCache
-	token    string
-}
-
-type Response struct {
-	Code    int
-	Message string
-}
+var (
+	balance int64
+	ic      *utils.InfoCache
+)
 
 func Home(ctx *gin.Context) {
 	dataList, err := models.GetHistoryLimit100()
@@ -44,10 +31,10 @@ func Home(ctx *gin.Context) {
 		return
 	}
 
-	ctx.HTML(http.StatusOK, "./views/index.html", gin.H{
-		"addr":    c.conf.String("addr"),
-		"limit":   limit,
-		"balance": cashutil.Amount(atomic.LoadInt64(&c.balance)).String(),
+	ctx.HTML(http.StatusOK, "index.html", gin.H{
+		"addr":    viper.GetString("faucet.addr"),
+		"limit":   viper.GetString("faucet.limit"),
+		"balance": btcutil.Amount(atomic.LoadInt64(&balance)).String(),
 		"list":    dataList,
 	})
 }
@@ -61,7 +48,7 @@ func FetchCoin(ctx *gin.Context) {
 	}).Debug("received post request")
 
 	postToken := ctx.GetString("token")
-	if postToken != "" && postToken != token {
+	if postToken != "" && postToken != viper.GetString("faucet.token") {
 		r := Response{1, "invalid token"}
 		ctx.JSON(http.StatusOK, gin.H{
 			"json": r,
@@ -70,10 +57,10 @@ func FetchCoin(ctx *gin.Context) {
 		return
 	}
 
-	isValid := postToken != "" && token == postToken
+	isValid := postToken != "" && viper.GetString("faucet.token") == postToken
 	// get bitcoin address and ip from request body
-	addr := ctx.GetString("address")
-	address, err := cashutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
+	addr := strings.Trim(ctx.GetString("address"), " ")
+	_, err := btcutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
 	if err != nil {
 		logrus.Debugf("the input address: %s", addr)
 		r := Response{1, "invalid bitcoin cash address"}
@@ -84,8 +71,7 @@ func FetchCoin(ctx *gin.Context) {
 		return
 	}
 
-	bech32Address := address.EncodeAddress(true)
-	if !isValid && c.ic.IsExit(bech32Address) {
+	if !isValid && ic.IsExit(addr) {
 		r := Response{1, "Do not request repeat!"}
 		ctx.JSON(http.StatusOK, gin.H{
 			"json": r,
@@ -94,7 +80,7 @@ func FetchCoin(ctx *gin.Context) {
 		return
 	}
 
-	if !isValid && c.ic.IsExit(ip) {
+	if !isValid && ic.IsExit(ip) {
 		r := Response{1, "Do not request repeat!"}
 		ctx.JSON(http.StatusOK, gin.H{
 			"json": r,
@@ -114,7 +100,7 @@ func FetchCoin(ctx *gin.Context) {
 
 		return
 	}
-	if !isValid && amount > c.limit {
+	if !isValid && amount > viper.GetFloat64("faucet.limit") {
 		r := Response{1, "Amount is too big"}
 		ctx.JSON(http.StatusOK, gin.H{
 			"json": r,
@@ -125,7 +111,7 @@ func FetchCoin(ctx *gin.Context) {
 
 	// view database, refused when meeting less than one day's request
 	existed := true
-	hisrecoder, err := models.ReturnTimeIfExist(bech32Address, ip)
+	his, err := models.ReturnTimeIfExist(addr, ip)
 	if err != nil && err != orm.ErrNoRows {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"json": "deny to service",
@@ -140,8 +126,8 @@ func FetchCoin(ctx *gin.Context) {
 		existed = true
 
 		now := time.Now()
-		diff := now.Sub(hisrecoder.Updated).Hours()
-		if diff < float64(interval) {
+		diff := now.Sub(his.Updated).Hours()
+		if diff < float64(viper.GetInt64("faucet.interval")) {
 			r := Response{1, "request frequently"}
 			ctx.JSON(http.StatusOK, gin.H{
 				"json": r,
@@ -153,31 +139,32 @@ func FetchCoin(ctx *gin.Context) {
 
 	// insert to cache， because it will be successful mostly!
 	if !isValid {
-		c.ic.InsertNew(bech32Address, ip)
+		ic.InsertNew(addr, ip)
 	}
 
-	c.client = Client(c)
-	txid, err := c.client.SendToAddress(address, cashutil.Amount(amount*1e8))
+	txid, err := SendCoin(addr, int64(amount*1e8))
 	if err != nil {
-		logrus.Debugf("create transaction error: %v", err)
+		logrus.Errorf("create transaction error: %s", err)
 		// unlucky, to remove the cache for request again.
-		c.ic.RemoveOne(bech32Address, ip)
-		r := Response{1, "Create Transaction error"}
-		c.Data["json"] = r
-		c.ServeJSON()
+		ic.RemoveOne(addr, ip)
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"json": Response{1, "Create Transaction error"},
+		})
+
 		return
 	}
 
 	// update balance at this time
-	atomic.SwapInt64(&c.balance, atomic.LoadInt64(&c.balance)-int64(amount*1e8))
+	atomic.SwapInt64(&balance, atomic.LoadInt64(&balance)-int64(amount*1e8))
 
 	o := orm.NewOrm()
 	if existed {
 		his := models.History{
-			Id:      hisrecoder.Id,
-			Address: bech32Address,
+			Id:      his.Id,
+			Address: addr,
 			IP:      ip,
-			Amount:  amount + hisrecoder.Amount,
+			Amount:  amount + his.Amount,
 		}
 		_, err = o.Update(&his, "amount", "address", "ip", "updated")
 		if err != nil {
@@ -185,7 +172,7 @@ func FetchCoin(ctx *gin.Context) {
 		}
 	} else {
 		his := models.History{
-			Address: bech32Address,
+			Address: addr,
 			IP:      ip,
 			Amount:  amount,
 		}
@@ -195,35 +182,55 @@ func FetchCoin(ctx *gin.Context) {
 		}
 	}
 
-	r := Response{0, txid.String()}
+	r := Response{0, txid}
 	ctx.JSON(http.StatusOK, gin.H{
 		"json": r,
 	})
 }
 
-func updateBalance(c *IndexController) {
-	client := Client(c)
-	amount, err := client.GetBalance("")
+func UpdateBalance() error {
+	client, err := utils.WalletClient(viper.GetString("wallet.host"), viper.GetString("wallet.port"))
 	if err != nil {
-		logrus.Error("update balance via rpc failed: " + err.Error())
-		return
+		return err
+	}
+
+	amount, err := client.Balance(context.Background(), &pb.Empty{})
+	if err != nil {
+		return err
 	}
 
 	logrus.Info("update balance via rpc request")
 
-	atomic.SwapInt64(&c.balance, int64(amount))
+	atomic.SwapInt64(&balance, int64(amount.Confirmed))
+	return nil
 }
 
-// Deprecated function, instead of gin.Context.ClientIP()
-func getClientIP(ctx *context.Context) string {
-	ip := ctx.Request.Header.Get("X-Forwarded-For")
-	if strings.Contains(ip, "127.0.0.1") || ip == "" {
-		ip = ctx.Request.Header.Get("X-real-ip")
+func SendCoin(address string, amount int64) (string, error) {
+	client, err := utils.WalletClient(viper.GetString("wallet.host"), viper.GetString("wallet.port"))
+	if err != nil {
+		return "", err
 	}
 
-	if ip == "" {
-		return "127.0.0.1"
+	txId, err := client.Spend(context.Background(), &pb.SpendInfo{
+		Address:  address,
+		Amount:   uint64(amount),
+		FeeLevel: pb.FeeLevel_ECONOMIC,
+	})
+	if err != nil {
+		return "", err
 	}
 
-	return ip
+	return txId.String(), nil
+}
+
+func SetBalance(amount int64) {
+	atomic.StoreInt64(&balance, amount)
+}
+
+func InitCache() {
+	ic = utils.New(120)
+}
+
+func CleanCache() {
+	ic.Clean()
 }

@@ -1,10 +1,11 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/astaxie/beego/orm"
-	"github.com/qshuai/coindis/conf"
+	"github.com/spf13/viper"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -18,24 +19,22 @@ type History struct {
 	Created time.Time `orm:"auto_now_add;type(datetime)"`
 }
 
-func init() {
+func SyncDataSource() error {
 	orm.Debug = true
-	config := conf.GetConfig()
 
 	//get mysql configuration
-	username := config.String("mysql::username")
-	password := config.String("mysql::password")
-	host := config.String("mysql::host")
-	port := config.String("mysql::port")
-	database := config.String("mysql::database")
+	username := viper.GetString("mysql.username")
+	password := viper.GetString("mysql.password")
+	host := viper.GetString("mysql.host")
+	port := viper.GetString("mysql.port")
+	database := viper.GetString("mysql.database")
+	fmt.Println("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8mb4&loc=Asia%2FShanghai")
 	err := orm.RegisterDataBase("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8mb4&loc=Asia%2FShanghai")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	orm.RegisterModel(new(History))
-	//err = orm.RunSyncdb("default", false, true)
-	//if err != nil {
-	//	panic(err)
-	//}
+	err = orm.RunSyncdb("default", false, true)
+	return err
 }

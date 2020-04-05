@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/qshuai/coindis/controllers"
+	"github.com/qshuai/coindis/models"
 	"github.com/qshuai/coindis/routers"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -39,25 +41,23 @@ func main() {
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, TimestampFormat: "2006-01-02 15:04:05", DisableTimestamp: false})
 	file, err := os.OpenFile("./logs/"+viper.GetString("log.filename")+".log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.FileMode(0644))
 	if err != nil {
-		fmt.Printf("open log file error: %s\n", err)
+		fmt.Printf("open the specifed log file failed: %s\n", err)
 		os.Exit(1)
 	}
 	logrus.SetOutput(file)
 
-	// init balance
-	updateBalance(&controller)
-
-	controller.limit, err = controller.conf.Float("limit")
+	// sync database state
+	err = models.SyncDataSource()
 	if err != nil {
-		panic(err)
+		fmt.Printf("sync database failed: %s\n", err)
+		os.Exit(1)
 	}
 
-	// should justify whether the token configuration is empty or not
-	controller.token = controller.conf.String("token")
-
-	controller.interval, err = controller.conf.Int64("interval")
+	// init balance
+	err = controllers.UpdateBalance()
 	if err != nil {
-		panic(err)
+		fmt.Printf("initial account balance error: %s\n", err)
+		os.Exit(1)
 	}
 
 	go func() {
@@ -68,7 +68,10 @@ func main() {
 		}()
 
 		for _ = range ticker.C {
-			updateBalance(&controller)
+			err = controllers.UpdateBalance()
+			if err != nil {
+				logrus.Errorf("update account balance failed, please check: %s\n", err)
+			}
 		}
 	}()
 
@@ -80,17 +83,18 @@ func main() {
 		}()
 
 		for _ = range ticker.C {
-			controller.ic.Clean()
+			controllers.CleanCache()
 		}
 	}()
 
 	logrus.Info("the coindis program started!")
 
 	r := gin.Default()
+	r.LoadHTMLGlob("views/*")
+	r.Static("/static", "./static")
 	routers.RegisterApi(r)
-
-	err = r.Run("8080")
+	err = r.Run(":" + viper.GetString("app.port"))
 	if err != nil {
-		logrus.Panicf("HTTP server runs error: %s", err)
+		fmt.Printf("HTTP server runs error: %s\n", err)
 	}
 }

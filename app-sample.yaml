@@ -5,7 +5,7 @@ app:
 
 faucet:
   token: ""
-  addr: "bchtest:qrt77hz8slndyem7hhmpn6slqk0dl8zmecrl52j6kn"
+  addr: "mw1Vs2DYHE6MmyKakFknL2KJ4GCeuSr49c"
   limit: 0.1
   interval: 86400
 

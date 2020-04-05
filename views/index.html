@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Distribution</title>
-    <link rel="shortcut icon" href="/static/img/icon.png" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link rel="shortcut icon" href="/static/img/icon.png"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body{
+        body {
             padding-top: 70px;
         }
     </style>
@@ -30,49 +31,50 @@
 </div>
 
 <div class="container">
-   <div class="center-align">
-       <form>
-           <fieldset class="form-group">
-               <label for="address">Bitcoin cash address:</label>
-               <input type="text" class="form-control" id="address" placeholder="eg: {{.addr}}">
-           </fieldset>
-           <fieldset class="form-group">
-               <label for="amount">Amount:</label>
-               <input type="text" class="form-control" id="amount" placeholder="Max Amount: {{.limit}}">
-           </fieldset>
-           <fieldset class="form-group">
-               <label for="token">token:</label>
-               <input type="text" class="form-control" id="token" placeholder="optional">
-           </fieldset>
-           <a class="github-button" href="https://github.com/qshuai/coindis" data-icon="octicon-star"
-              data-size="large" data-show-count="true" aria-label="Star qshuai/coindis on GitHub">Star</a><br>
-           <a id="sendbtn" class="btn btn-primary">Send</a> &nbsp;&nbsp;&nbsp;<strong id="msg"></strong>
-       </form>
-   </div>
+    <div class="center-align">
+        <form>
+            <fieldset class="form-group">
+                <label for="address">Bitcoin cash address:</label>
+                <input type="text" class="form-control" id="address" placeholder="eg: {{.addr}}">
+            </fieldset>
+            <fieldset class="form-group">
+                <label for="amount">Amount:</label>
+                <input type="text" class="form-control" id="amount" placeholder="Max Amount: {{.limit}}">
+            </fieldset>
+            <fieldset class="form-group">
+                <label for="token">token:</label>
+                <input type="text" class="form-control" id="token" placeholder="optional">
+            </fieldset>
+            <a class="github-button" href="https://github.com/qshuai/coindis" data-icon="octicon-star"
+               data-size="large" data-show-count="true" aria-label="Star qshuai/coindis on GitHub">Star</a><br>
+            <a id="sendbtn" class="btn btn-primary">Send</a> &nbsp;&nbsp;&nbsp;<strong id="msg"></strong>
+        </form>
+    </div>
 
     <h3>Faucet Address</h3>
     <div>Send coins back, when you don't need them anymore: <strong>{{.addr}}</strong></div>
     <br>
     <div>
         <ul class="list-group txlist">
-        {{range $index, $elem := .list}}
-            <li class="list-group-item">
-                <span class="badge">{{$elem.Amount}}</span>{{$elem.Address}}
-            </li>
-        {{end}}
+            {{range $index, $elem := .list}}
+                <li class="list-group-item">
+                    <span class="badge">{{$elem.Amount}}</span>{{$elem.Address}}
+                </li>
+            {{end}}
         </ul>
     </div>
 </div>
 <div style="height: 55px;"></div>
 <nav class="navbar navbar-default navbar-fixed-bottom">
     <div class="container">
-       <p style="padding-top: 10px; text-align: center"> Github: <a href="https://github.com/qshuai/coindis">https://github.com/qshuai/coindis</a></p>
+        <p style="padding-top: 10px; text-align: center"> Github: <a href="https://github.com/qshuai/coindis">https://github.com/qshuai/coindis</a>
+        </p>
     </div>
 </nav>
 
-<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
-<!-- Place this tag in your head or just before your close body tag. -->
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <script src="/static/js/index.js"></script>
 </body>
