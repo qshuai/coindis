@@ -223,10 +223,6 @@ func SendCoin(address string, amount int64) (string, error) {
 	return txId.String(), nil
 }
 
-func SetBalance(amount int64) {
-	atomic.StoreInt64(&balance, amount)
-}
-
 func InitCache() {
 	ic = utils.New(120)
 }

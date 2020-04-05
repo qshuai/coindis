@@ -66,7 +66,7 @@ func (c *InfoCache) Clean() {
 		}
 	}
 
-	logrus.Info("clear addresses cache")
+	logrus.Debug("clear addresses cache")
 }
 
 func New(capacity int) *InfoCache {
