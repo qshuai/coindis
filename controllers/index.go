@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"github.com/qshuai/coindis/conf"
-	"github.com/qshuai/coindis/utils"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -15,7 +13,9 @@ import (
 	"github.com/bcext/cashutil"
 	"github.com/bcext/gcash/chaincfg"
 	"github.com/bcext/gcash/rpcclient"
+	"github.com/qshuai/coindis/conf"
 	"github.com/qshuai/coindis/models"
+	"github.com/qshuai/coindis/utils"
 	"github.com/sirupsen/logrus"
 )
 

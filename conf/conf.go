@@ -1,8 +1,9 @@
 package conf
 
 import (
-	"github.com/astaxie/beego/config"
 	"sync"
+
+	"github.com/astaxie/beego/config"
 )
 
 var (
