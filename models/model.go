@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/astaxie/beego/orm"
@@ -28,7 +27,6 @@ func SyncDataSource() error {
 	host := viper.GetString("mysql.host")
 	port := viper.GetString("mysql.port")
 	database := viper.GetString("mysql.database")
-	fmt.Println("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8mb4&loc=Asia%2FShanghai")
 	err := orm.RegisterDataBase("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8mb4&loc=Asia%2FShanghai")
 	if err != nil {
 		return err

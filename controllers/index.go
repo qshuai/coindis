@@ -39,33 +39,51 @@ func Home(ctx *gin.Context) {
 	})
 }
 
+type FetchCoinRequest struct {
+	Address string `json:"address" binding:"required"`
+	Amount  string `json:"amount" binding:"required"`
+	Token   string `json:"token"`
+}
+
 func FetchCoin(ctx *gin.Context) {
+	var req FetchCoinRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		logrus.Errorf("invalid parameter: %s", err)
+		ctx.JSON(http.StatusOK, gin.H{
+			"data": Response{
+				Code:    -1,
+				Message: "invalid parameter",
+			},
+		})
+		return
+	}
+
 	ip := ctx.ClientIP()
 	logrus.WithFields(logrus.Fields{
-		"address": ctx.GetString("address"),
-		"amount":  ctx.GetString("amount"),
+		"address": req.Address,
+		"amount":  req.Amount,
+		"token":   req.Token,
 		"ip":      ip,
 	}).Debug("received post request")
 
-	postToken := ctx.GetString("token")
-	if postToken != "" && postToken != viper.GetString("faucet.token") {
+	if req.Token != "" && req.Token != viper.GetString("faucet.token") {
 		r := Response{1, "invalid token"}
 		ctx.JSON(http.StatusOK, gin.H{
-			"json": r,
+			"data": r,
 		})
 
 		return
 	}
 
-	isValid := postToken != "" && viper.GetString("faucet.token") == postToken
+	isValid := req.Token != "" && viper.GetString("faucet.token") == req.Token
 	// get bitcoin address and ip from request body
-	addr := strings.Trim(ctx.GetString("address"), " ")
+	addr := strings.Trim(req.Address, " ")
 	_, err := btcutil.DecodeAddress(addr, &chaincfg.TestNet3Params)
 	if err != nil {
 		logrus.Debugf("the input address: %s", addr)
-		r := Response{1, "invalid bitcoin cash address"}
+		r := Response{1, "invalid bitcoin address"}
 		ctx.JSON(http.StatusOK, gin.H{
-			"json": r,
+			"data": r,
 		})
 
 		return
@@ -74,7 +92,7 @@ func FetchCoin(ctx *gin.Context) {
 	if !isValid && ic.IsExit(addr) {
 		r := Response{1, "Do not request repeat!"}
 		ctx.JSON(http.StatusOK, gin.H{
-			"json": r,
+			"data": r,
 		})
 
 		return
@@ -83,19 +101,19 @@ func FetchCoin(ctx *gin.Context) {
 	if !isValid && ic.IsExit(ip) {
 		r := Response{1, "Do not request repeat!"}
 		ctx.JSON(http.StatusOK, gin.H{
-			"json": r,
+			"data": r,
 		})
 
 		return
 	}
 
 	// get and parse amount
-	amount, err := strconv.ParseFloat(ctx.GetString("amount"), 10)
+	amount, err := strconv.ParseFloat(req.Amount, 10)
 	if err != nil {
 		logrus.Debugf("the input amount invalid: %s", amount)
 		r := Response{1, "Get Amount error"}
 		ctx.JSON(http.StatusOK, gin.H{
-			"json": r,
+			"data": r,
 		})
 
 		return
@@ -103,7 +121,7 @@ func FetchCoin(ctx *gin.Context) {
 	if !isValid && amount > viper.GetFloat64("faucet.limit") {
 		r := Response{1, "Amount is too big"}
 		ctx.JSON(http.StatusOK, gin.H{
-			"json": r,
+			"data": r,
 		})
 
 		return
@@ -114,7 +132,7 @@ func FetchCoin(ctx *gin.Context) {
 	his, err := models.ReturnTimeIfExist(addr, ip)
 	if err != nil && err != orm.ErrNoRows {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"json": "deny to service",
+			"data": "deny to service",
 		})
 
 		return
@@ -130,7 +148,7 @@ func FetchCoin(ctx *gin.Context) {
 		if diff < float64(viper.GetInt64("faucet.interval")) {
 			r := Response{1, "request frequently"}
 			ctx.JSON(http.StatusOK, gin.H{
-				"json": r,
+				"data": r,
 			})
 
 			return
@@ -149,7 +167,7 @@ func FetchCoin(ctx *gin.Context) {
 		ic.RemoveOne(addr, ip)
 
 		ctx.JSON(http.StatusOK, gin.H{
-			"json": Response{1, "Create Transaction error"},
+			"data": Response{1, "Create Transaction error"},
 		})
 
 		return
@@ -184,7 +202,7 @@ func FetchCoin(ctx *gin.Context) {
 
 	r := Response{0, txid}
 	ctx.JSON(http.StatusOK, gin.H{
-		"json": r,
+		"data": r,
 	})
 }
 

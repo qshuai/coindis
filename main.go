@@ -61,7 +61,7 @@ func main() {
 	}
 
 	go func() {
-		ticker := time.NewTicker(time.Second * 30)
+		ticker := time.NewTicker(time.Minute * 30)
 		defer func() {
 			ticker.Stop()
 			logrus.Error("the goroutine holds the ticker to update balance existed")
@@ -77,7 +77,7 @@ func main() {
 
 	controllers.InitCache()
 	go func() {
-		ticker := time.NewTicker(time.Second * 10)
+		ticker := time.NewTicker(time.Minute * 30)
 		defer func() {
 			ticker.Stop()
 			logrus.Error("the goroutine holds the ticker to cache clean existed")
