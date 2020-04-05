@@ -1,0 +1,21 @@
+app:
+  name: coindis
+  port: 9090
+  dev: false
+
+faucet:
+  token: ""
+  addr: "bchtest:qrt77hz8slndyem7hhmpn6slqk0dl8zmecrl52j6kn"
+  limit: 0.1
+  interval: 86400
+
+mysql:
+  username: your-db-username
+  password: your-db-password
+  host: 127.0.0.1
+  port: 3306
+  database: faucet
+
+log:
+  level: debug
+  filename: condis

@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/astaxie/beego/orm"
 	"github.com/qshuai/coindis/conf"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -27,14 +28,14 @@ func init() {
 	host := config.String("mysql::host")
 	port := config.String("mysql::port")
 	database := config.String("mysql::database")
-	err := orm.RegisterDataBase("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8&loc=Asia%2FShanghai")
+	err := orm.RegisterDataBase("default", "mysql", username+":"+password+"@tcp("+host+":"+port+")/"+database+"?charset=utf8mb4&loc=Asia%2FShanghai")
 	if err != nil {
 		panic(err)
 	}
 
 	orm.RegisterModel(new(History))
-	err = orm.RunSyncdb("default", false, true)
-	if err != nil {
-		panic(err)
-	}
+	//err = orm.RunSyncdb("default", false, true)
+	//if err != nil {
+	//	panic(err)
+	//}
 }

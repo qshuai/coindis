@@ -1,5 +1,5 @@
 .idea
-app.conf
+app.yaml
 coindis
 nohup.out
 
