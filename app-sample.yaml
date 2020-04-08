@@ -3,6 +3,10 @@ app:
   port: 9090
   dev: false
 
+wallet:
+  host: 127.0.0.1
+  port: 8234
+
 faucet:
   token: ""
   addr: "mw1Vs2DYHE6MmyKakFknL2KJ4GCeuSr49c"
